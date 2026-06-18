@@ -9,3 +9,5 @@ rapidfuzz
 faster-whisper
 tqdm
 scikit-learn
+
+torchcodec
