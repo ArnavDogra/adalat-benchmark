@@ -150,7 +150,7 @@ def main():
     # you must use `ct2-transformers-converter` prior to running, or standard HuggingFace pipeline.
     # We attempt to load it directly as requested.
     try:
-        model = WhisperModel("adalat-ai/whisper-medium-hi-high-lr", device="cuda", compute_type="float16")
+        model = WhisperModel("adalat_ct2", device="cuda", compute_type="float16")
     except Exception as e:
         logger.error(f"Failed to load faster-whisper model: {e}")
         logger.error("Please ensure the HF repo contains CTranslate2 weights, or convert it locally first.")
