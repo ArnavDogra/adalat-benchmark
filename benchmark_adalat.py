@@ -154,9 +154,8 @@ def main():
     def assign_bucket(s): return 'GOOD' if s >= q66 else ('MODERATE' if s >= q33 else 'BAD')
     master_df['audio_bucket'] = master_df['quality_score'].apply(assign_bucket)
 
-    logger.info("Matching Kaggle Files exactly...")
-    kaggle_clips = ['2287602D075B', 'AAF5602D075A', 'BA87602D075B', 'FAC1602D075A', 'F2F5602D075A', '3487602D075B']
-    eval_df = master_df[master_df['clip_id'].isin(kaggle_clips)].copy()
+    logger.info("Random Sampling (2 per bucket)...")
+    eval_df = master_df.groupby('audio_bucket', group_keys=False).apply(lambda x: x.sample(n=min(2, len(x)), random_state=42)).copy()
     logger.info(f"Selected {len(eval_df)} files.")
 
     logger.info("Initializing Silero VAD exactly once...")
