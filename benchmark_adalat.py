@@ -236,6 +236,13 @@ def main():
     print_cols = [c for c in ['clip_id', 'audio_bucket'] if c in final_df.columns]
     print(final_df[print_cols].to_string(index=False))
     
+    if 'audio_bucket' in final_df.columns:
+        print("\n=== AVERAGES BY BUCKET ===")
+        b_cols = [c for c in ['wer', 'cer', 'similarity', 'keyword_recall', 'inference_time'] if c in final_df.columns]
+        if b_cols:
+            bucket_summary = final_df.groupby('audio_bucket')[b_cols].mean()
+            print(bucket_summary.round(4).to_string())
+    
     print("\n=== OVERALL AVERAGES ===")
     for metric in ['wer', 'cer', 'similarity', 'keyword_recall', 'inference_time']:
         if metric in final_df.columns:
