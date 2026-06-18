@@ -1,0 +1,11 @@
+# requirements.txt
+pandas
+numpy
+librosa
+torch
+torchaudio
+jiwer
+rapidfuzz
+faster-whisper
+tqdm
+scikit-learn
