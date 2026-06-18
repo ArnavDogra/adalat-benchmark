@@ -212,6 +212,10 @@ def main():
         logger.error("No successful evaluations were completed. Results dataframe is empty!")
         return
 
+    # Pandas 2.2+ drops grouping columns in apply. Re-attach audio_bucket from master_df
+    if 'audio_bucket' not in final_df.columns and 'audio_bucket' in master_df.columns:
+        final_df = pd.merge(final_df, master_df[['clip_id', 'audio_bucket']], on='clip_id', how='left')
+
     # Safely select columns for the keyword results
     kw_cols = [c for c in ['clip_id', 'audio_bucket', 'keyword_recall', 'matched_keywords', 'missed_keywords'] if c in final_df.columns]
     final_df.to_csv("results/keyword_results.csv", columns=kw_cols, index=False)
