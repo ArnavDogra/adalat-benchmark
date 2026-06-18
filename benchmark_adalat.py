@@ -204,7 +204,7 @@ def main():
         pd.DataFrame(results_list).to_csv("results/evaluation_results.csv", index=False)
         
     final_df = pd.DataFrame(results_list)
-    final_df.to_csv("results/keyword_results.csv", columns=['clip_id', 'audio_bucket', 'keyword_recall', 'matched_keywords', 'missed_keywords'], index=False)
+    final_df.to_csv("results/keyword_results.csv", columns=['clip_id', 'audio_bucket', 'keyword_recall'], index=False)
     
     bucket_summary = final_df.groupby('audio_bucket')[['wer', 'cer', 'similarity', 'keyword_recall']].mean()
     bucket_summary.to_csv("results/bucket_summary.csv")
