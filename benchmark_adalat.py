@@ -204,28 +204,41 @@ def main():
         pd.DataFrame(results_list).to_csv("results/evaluation_results.csv", index=False)
         
     final_df = pd.DataFrame(results_list)
-    final_df.to_csv("results/keyword_results.csv", columns=['clip_id', 'audio_bucket', 'keyword_recall'], index=False)
     
-    bucket_summary = final_df.groupby('audio_bucket')[['wer', 'cer', 'similarity', 'keyword_recall']].mean()
-    bucket_summary.to_csv("results/bucket_summary.csv")
+    if final_df.empty:
+        logger.error("No successful evaluations were completed. Results dataframe is empty!")
+        return
+
+    # Safely select columns for the keyword results
+    kw_cols = [c for c in ['clip_id', 'audio_bucket', 'keyword_recall', 'matched_keywords', 'missed_keywords'] if c in final_df.columns]
+    final_df.to_csv("results/keyword_results.csv", columns=kw_cols, index=False)
+    
+    if 'audio_bucket' in final_df.columns:
+        bucket_summary = final_df.groupby('audio_bucket')[['wer', 'cer', 'similarity', 'keyword_recall']].mean()
+        bucket_summary.to_csv("results/bucket_summary.csv")
     
     # Console Print
-    print("\\n==============================================")
+    print("\n==============================================")
     print("                FINAL RESULTS                 ")
     print("==============================================")
     print(f"Dataset Total Files : {len(audio_df)}")
     print(f"Bucketed Total      : {len(master_df)}")
     print(f"Files Evaluated     : {len(final_df)}")
-    print("\\n=== BUCKET COUNTS ===")
-    print(master_df['audio_bucket'].value_counts().to_string())
-    print("\\n=== SELECTED FILES ===")
-    print(final_df[['clip_id', 'audio_bucket']].to_string(index=False))
-    print("\\n=== OVERALL AVERAGES ===")
-    print(f"Average WER            : {final_df['wer'].mean():.4f}")
-    print(f"Average CER            : {final_df['cer'].mean():.4f}")
-    print(f"Average Similarity     : {final_df['similarity'].mean():.4f}")
-    print(f"Average Keyword Recall : {final_df['keyword_recall'].mean():.4f}")
-    print("\\nCheck the 'results/' folder for detailed CSV outputs.")
+    
+    if 'audio_bucket' in master_df.columns:
+        print("\n=== BUCKET COUNTS ===")
+        print(master_df['audio_bucket'].value_counts().to_string())
+        
+    print("\n=== SELECTED FILES ===")
+    print_cols = [c for c in ['clip_id', 'audio_bucket'] if c in final_df.columns]
+    print(final_df[print_cols].to_string(index=False))
+    
+    print("\n=== OVERALL AVERAGES ===")
+    for metric in ['wer', 'cer', 'similarity', 'keyword_recall']:
+        if metric in final_df.columns:
+            print(f"Average {metric.capitalize():<14} : {final_df[metric].mean():.4f}")
+            
+    print("\nCheck the 'results/' folder for detailed CSV outputs.")
 
 if __name__ == "__main__":
     main()
