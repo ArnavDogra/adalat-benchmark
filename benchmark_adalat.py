@@ -234,9 +234,12 @@ def main():
     print(final_df[print_cols].to_string(index=False))
     
     print("\n=== OVERALL AVERAGES ===")
-    for metric in ['wer', 'cer', 'similarity', 'keyword_recall']:
+    for metric in ['wer', 'cer', 'similarity', 'keyword_recall', 'inference_time']:
         if metric in final_df.columns:
-            print(f"Average {metric.capitalize():<14} : {final_df[metric].mean():.4f}")
+            if metric == 'inference_time':
+                print(f"Average {metric.capitalize():<14} : {final_df[metric].mean():.4f} seconds")
+            else:
+                print(f"Average {metric.capitalize():<14} : {final_df[metric].mean():.4f}")
             
     print("\nCheck the 'results/' folder for detailed CSV outputs.")
 
