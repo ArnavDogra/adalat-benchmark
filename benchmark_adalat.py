@@ -122,7 +122,14 @@ def main():
     tqdm.pandas(desc='Profiling')
     cols = ['duration', 'sample_rate', 'rms_energy', 'silence_ratio', 'dynamic_range', 'signal_variance', 'clipping_ratio']
     master_df[cols] = master_df['full_path'].progress_apply(profile_audio)
-    master_df = master_df[master_df['duration'] > 0]
+    
+    # NEW DURATION LIMIT: Must be between 15 seconds and 5 minutes!
+    master_df = master_df[(master_df['duration'] >= 15) & (master_df['duration'] <= 300)]
+    logger.info(f'Filtered to {len(master_df)} valid audio files (15s to 5 mins).')
+    
+    # NEW METRIC: Transcript Clarity
+    master_df['word_count'] = master_df['sarvam_transcript'].apply(lambda x: len(str(x).split()))
+    master_df['speaking_rate'] = master_df['word_count'] / (master_df['duration'] + 1e-9)
 
     logger.info("Running Hybrid Quality Bucketing...")
     scaler = MinMaxScaler()
@@ -131,8 +138,18 @@ def main():
     norm_dr = scaler.fit_transform(master_df[['dynamic_range']])
     norm_silence = 1 - scaler.fit_transform(master_df[['silence_ratio']])
     norm_clipping = 1 - scaler.fit_transform(master_df[['clipping_ratio']])
+    norm_clarity = scaler.fit_transform(master_df[['speaking_rate']])
     
-    master_df['quality_score'] = (0.2 * norm_rms + 0.2 * norm_var + 0.1 * norm_dr + 0.2 * norm_silence + 0.2 * norm_clipping)
+    # UPDATED SCORE: 70% Librosa + 30% Transcript Clarity
+    master_df['quality_score'] = (
+        0.15 * norm_rms + 
+        0.10 * norm_var + 
+        0.10 * norm_dr + 
+        0.15 * norm_silence + 
+        0.20 * norm_clipping + 
+        0.30 * norm_clarity
+    )
+    
     q33, q66 = master_df['quality_score'].quantile([0.33, 0.66])
     def assign_bucket(s): return 'GOOD' if s >= q66 else ('MODERATE' if s >= q33 else 'BAD')
     master_df['audio_bucket'] = master_df['quality_score'].apply(assign_bucket)
