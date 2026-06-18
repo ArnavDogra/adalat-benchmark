@@ -165,20 +165,23 @@ def main():
         speech_timestamps = get_speech_timestamps(wav, vad_model, sampling_rate=16000)
         
         seg_count = len(speech_timestamps) if speech_timestamps else 1
-        chunks = [wav[s['start']:s['end']].numpy() for s in speech_timestamps] if speech_timestamps else [wav.numpy()]
-        
-        total_dur = sum([len(c)/16000 for c in chunks])
+        total_dur = sum([(s['end'] - s['start'])/16000 for s in speech_timestamps]) if speech_timestamps else len(wav)/16000
         avg_dur = total_dur / seg_count if seg_count > 0 else 0
         
-        text_pieces = []
-        for chunk in chunks:
-            try:
-                segments, _ = model.transcribe(chunk, beam_size=5, language="hi")
-                text_pieces.append(" ".join([seg.text for seg in segments]))
-            except Exception as e:
-                logger.error(f"Transcription error on {row['clip_id']}: {e}")
-                
-        transcript = ' '.join(text_pieces).strip()
+        try:
+            # Use faster-whisper's native VAD on the entire audio array to preserve sentence context.
+            # We use beam_size=1 (greedy) to perfectly match HuggingFace Pipeline's default Kaggle behavior.
+            segments, _ = model.transcribe(
+                wav.numpy(), 
+                beam_size=1, 
+                language="hi",
+                vad_filter=True,
+                vad_parameters=dict(min_silence_duration_ms=500)
+            )
+            transcript = ' '.join([seg.text for seg in segments]).strip()
+        except Exception as e:
+            logger.error(f"Transcription error on {row['clip_id']}: {e}")
+            transcript = ""
         
         # Metrics
         w, c, s = compute_wer_cer_sim(row['sarvam_transcript'], transcript)
