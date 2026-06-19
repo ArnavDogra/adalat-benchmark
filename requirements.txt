@@ -1,13 +1,11 @@
-# requirements.txt
-pandas
-numpy
-librosa
-torch
-torchaudio
-jiwer
-rapidfuzz
-faster-whisper
-tqdm
-scikit-learn
-
-torchcodec
+pandas>=2.0.0
+numpy>=1.24.0
+librosa>=0.10.0
+torch>=2.0.0
+jiwer>=3.0.0
+rapidfuzz>=3.0.0
+transformers>=4.30.0
+tqdm>=4.65.0
+soundfile>=0.12.1
+accelerate>=0.20.0
+scikit-learn>=1.2.0

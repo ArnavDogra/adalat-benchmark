@@ -1,0 +1,24 @@
+# Data files
+*.zip
+*.csv
+*.json
+*.jsonl
+*.wav
+*.mp3
+audio_unzipped/
+
+# Notebooks and generated python scripts not related to EC2 deploy
+*.ipynb
+adalat_code.py
+build_clean_notebook.py
+build_notebook.py
+build_validation_nb.py
+build_adalat_validation.py
+
+# Results and Logs
+results/
+logs/
+
+# Python cache
+__pycache__/
+*.pyc
