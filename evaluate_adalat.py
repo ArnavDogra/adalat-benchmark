@@ -44,13 +44,19 @@ logger.info(f"Starting execution on device: {DEVICE}")
 # --- HELPER FUNCTIONS ---
 def unzip_audio():
     if not os.path.exists(UNZIP_DIR):
-        if os.path.exists(AUDIO_ZIP):
-            logger.info(f"Unzipping {AUDIO_ZIP} to {UNZIP_DIR}...")
-            with zipfile.ZipFile(AUDIO_ZIP, 'r') as zip_ref:
+        zip_file_to_extract = None
+        if os.path.exists("hindi_audio.zip"):
+            zip_file_to_extract = "hindi_audio.zip"
+        elif os.path.exists(AUDIO_ZIP):
+            zip_file_to_extract = AUDIO_ZIP
+            
+        if zip_file_to_extract:
+            logger.info(f"Unzipping {zip_file_to_extract} to {UNZIP_DIR}...")
+            with zipfile.ZipFile(zip_file_to_extract, 'r') as zip_ref:
                 zip_ref.extractall(UNZIP_DIR)
             logger.info("Unzip complete.")
         else:
-            logger.warning(f"Could not find {AUDIO_ZIP} and {UNZIP_DIR} does not exist. Scanning current directory instead.")
+            logger.warning(f"Could not find audio.zip or hindi_audio.zip, and {UNZIP_DIR} does not exist. Scanning current directory instead.")
     else:
         logger.info(f"Audio directory {UNZIP_DIR} already exists. Skipping unzip.")
 
