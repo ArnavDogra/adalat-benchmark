@@ -168,8 +168,10 @@ def main():
     # 3. Sampling
     logger.info("Sampling 10 files per bucket (duration <= 90s)...")
     filtered_df = master_df[master_df['duration'] <= 90]
-    evaluation_sample = filtered_df.groupby('audio_bucket', group_keys=False).apply(lambda x: x.sample(n=min(10, len(x)), random_state=42)).reset_index(drop=True)
-    
+    samples = []
+    for bucket, group in filtered_df.groupby('audio_bucket'):
+        samples.append(group.sample(n=min(10, len(group)), random_state=42))
+    evaluation_sample = pd.concat(samples, ignore_index=True) if samples else pd.DataFrame(columns=master_df.columns)
     bucket_csv_path = os.path.join(RESULTS_DIR, "bucket_assignments.csv")
     evaluation_sample.to_csv(bucket_csv_path, index=False)
     logger.info(f"Selected {len(evaluation_sample)} files. Saved to {bucket_csv_path}")
