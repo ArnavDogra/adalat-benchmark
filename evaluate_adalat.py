@@ -364,9 +364,9 @@ def main():
         overall_rtf = 0
         time_for_1_min_e2e = 0
     
-    est_100 = avg_runtime * 100 / 60
-    est_500 = avg_runtime * 500 / 60
-    est_1000 = avg_runtime * 1000 / 60
+    est_100 = avg_end_to_end_time * 100 / 60
+    est_500 = avg_end_to_end_time * 500 / 60
+    est_1000 = avg_end_to_end_time * 1000 / 60
 
     report = f"""
 =========================================
@@ -404,7 +404,7 @@ Average audio file duration in this batch: {avg_audio_duration:.2f} seconds
 Overall End-to-End RTF: {overall_rtf:.4f} (Pipeline Time / Total Audio Duration)
 Time required for a full 1-minute audio file (End-to-End): {time_for_1_min_e2e:.2f} seconds
 
---- ESTIMATED PROCESSING TIMES (Transcription Only) ---
+--- ESTIMATED PROCESSING TIMES (End-to-End Pipeline) ---
 For 100 files: ~{est_100:.2f} minutes
 For 500 files: ~{est_500:.2f} minutes
 For 1000 files: ~{est_1000:.2f} minutes
