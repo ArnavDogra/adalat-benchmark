@@ -9,4 +9,5 @@ tqdm>=4.65.0
 soundfile>=0.12.1
 accelerate>=0.20.0
 scikit-learn>=1.2.0
+torchcodec>=0.1.0
 torchaudio>=2.0.0
