@@ -110,7 +110,9 @@ def main():
     pipeline_start_time = time.time()
     logger.info("=== STARTING ADALAT EVALUATION PIPELINE ===")
     
+    t_unzip_start = time.time()
     unzip_audio()
+    t_unzip_end = time.time()
     
     # 1. Load Data
     logger.info("Scanning for audio files...")
@@ -140,6 +142,7 @@ def main():
 
     # 2. Profiling & Bucketing
     logger.info("Profiling audio files...")
+    t_profile_start = time.time()
     tqdm.pandas(desc="Profiling Audio")
     cols = ['duration', 'sample_rate', 'rms_energy', 'silence_ratio', 'dynamic_range', 'signal_variance', 'clipping_ratio']
     master_df[cols] = master_df['full_path'].progress_apply(profile_audio)
@@ -177,6 +180,7 @@ def main():
     bucket_csv_path = os.path.join(RESULTS_DIR, "bucket_assignments.csv")
     evaluation_sample.to_csv(bucket_csv_path, index=False)
     logger.info(f"Selected {len(evaluation_sample)} files. Saved to {bucket_csv_path}")
+    t_profile_end = time.time()
     
     # 4. Checkpointing setup
     transcriptions_csv_path = os.path.join(RESULTS_DIR, "transcriptions.csv")
@@ -205,6 +209,7 @@ def main():
     # 6. Transcription & VAD Loop
     logger.info("Starting transcription loop...")
     results_list = []
+    t_transcribe_start = time.time()
                      
     for _, row in tqdm(evaluation_sample.iterrows(), total=len(evaluation_sample), desc="Transcribing"):
         clip_id = row['clip_id']
@@ -255,9 +260,11 @@ def main():
             results_list.append(res_dict)
 
     df_results = pd.DataFrame(results_list)
+    t_transcribe_end = time.time()
     
     # 7. Metrics Evaluation
     logger.info("Computing metrics...")
+    t_metrics_start = time.time()
     wer_transform = jiwer.Compose([jiwer.ToLowerCase(), jiwer.RemoveMultipleSpaces(), jiwer.RemovePunctuation(), jiwer.Strip()])
     
     def compute_metrics(row):
@@ -336,9 +343,26 @@ def main():
     avg_rtf = df_results['rtf'].mean()
     
     pipeline_end_time = time.time()
+    t_metrics_end = pipeline_end_time
+    
     total_pipeline_time = pipeline_end_time - pipeline_start_time
     total_files_processed = len(df_results)
     avg_end_to_end_time = total_pipeline_time / total_files_processed if total_files_processed > 0 else 0
+    
+    total_unzip_time = t_unzip_end - t_unzip_start
+    total_profile_time = t_profile_end - t_profile_start
+    total_transcribe_time = t_transcribe_end - t_transcribe_start
+    total_metrics_time = t_metrics_end - t_metrics_start
+    
+    total_audio_duration = df_results['duration'].sum()
+    avg_audio_duration = df_results['duration'].mean()
+    
+    if total_audio_duration > 0:
+        overall_rtf = total_pipeline_time / total_audio_duration
+        time_for_1_min_e2e = overall_rtf * 60
+    else:
+        overall_rtf = 0
+        time_for_1_min_e2e = 0
     
     est_100 = avg_runtime * 100 / 60
     est_500 = avg_runtime * 500 / 60
@@ -367,14 +391,20 @@ Worst File (WER): {worst_file['clip_id'] if worst_file is not None else 'N/A'} (
 {json.dumps(top_missing, indent=2, ensure_ascii=False)}
 
 --- TIMING & PROFILING (GPU) ---
-Average Transcription Runtime per file: {avg_runtime:.2f} seconds
-Average Real Time Factor (RTF): {avg_rtf:.4f}  (Time taken / Audio Duration)
-(Note: RTF of 0.10 means 1 minute of audio takes 6 seconds to process)
+[Stage 1] Unzipping Data: {total_unzip_time:.2f}s
+[Stage 2] Profiling & Bucketing: {total_profile_time:.2f}s
+[Stage 3] VAD & Transcription: {total_transcribe_time:.2f}s
+[Stage 4] Metric Computation: {total_metrics_time:.2f}s
 
 Total Pipeline Execution Time: {total_pipeline_time:.2f} seconds
-Average End-to-End Time per file: {avg_end_to_end_time:.2f} seconds (includes unzipping, profiling & prep)
+Average End-to-End Time per file: {avg_end_to_end_time:.2f} seconds (includes all stages above)
 
---- ESTIMATED PROCESSING TIMES ---
+--- SCALED 1-MINUTE ANALYSIS ---
+Average audio file duration in this batch: {avg_audio_duration:.2f} seconds
+Overall End-to-End RTF: {overall_rtf:.4f} (Pipeline Time / Total Audio Duration)
+Time required for a full 1-minute audio file (End-to-End): {time_for_1_min_e2e:.2f} seconds
+
+--- ESTIMATED PROCESSING TIMES (Transcription Only) ---
 For 100 files: ~{est_100:.2f} minutes
 For 500 files: ~{est_500:.2f} minutes
 For 1000 files: ~{est_1000:.2f} minutes
