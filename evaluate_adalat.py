@@ -106,6 +106,8 @@ def profile_audio(path):
 
 # --- MAIN WORKFLOW ---
 def main():
+    import time
+    pipeline_start_time = time.time()
     logger.info("=== STARTING ADALAT EVALUATION PIPELINE ===")
     
     unzip_audio()
@@ -333,6 +335,11 @@ def main():
     avg_runtime = df_results['inference_time'].mean()
     avg_rtf = df_results['rtf'].mean()
     
+    pipeline_end_time = time.time()
+    total_pipeline_time = pipeline_end_time - pipeline_start_time
+    total_files_processed = len(df_results)
+    avg_end_to_end_time = total_pipeline_time / total_files_processed if total_files_processed > 0 else 0
+    
     est_100 = avg_runtime * 100 / 60
     est_500 = avg_runtime * 500 / 60
     est_1000 = avg_runtime * 1000 / 60
@@ -363,6 +370,9 @@ Worst File (WER): {worst_file['clip_id'] if worst_file is not None else 'N/A'} (
 Average Transcription Runtime per file: {avg_runtime:.2f} seconds
 Average Real Time Factor (RTF): {avg_rtf:.4f}  (Time taken / Audio Duration)
 (Note: RTF of 0.10 means 1 minute of audio takes 6 seconds to process)
+
+Total Pipeline Execution Time: {total_pipeline_time:.2f} seconds
+Average End-to-End Time per file: {avg_end_to_end_time:.2f} seconds (includes unzipping, profiling & prep)
 
 --- ESTIMATED PROCESSING TIMES ---
 For 100 files: ~{est_100:.2f} minutes
